@@ -19,7 +19,8 @@ def _algorithmic_scoring(
     sustainability: Dict,
     risk_penalty: Dict,
     constraints: Dict,
-    all_prices: List[float]
+    all_prices: List[float],
+    cargo_profile: Dict
 ) -> Dict[str, Any]:
     """
     Deterministic multi-criteria scoring when LLM is not available.
@@ -88,6 +89,16 @@ def _algorithmic_scoring(
         reliability_score -= 5
     if time_penalty > 0:
         reliability_score -= 10  # Risk scenarios reduce reliability
+        
+    fragility = cargo_profile.get("fragility_score", 0) if cargo_profile else 0
+    if fragility > 70:
+        if route["mode"] == "sea":
+            reliability_score -= 25 # High risk of cargo damage at sea
+        elif route["mode"] == "multimodal":
+            reliability_score -= 20 # High handling breakage risk
+        else:
+            reliability_score += 10 # Safer handling on direct air/road
+            
     reliability_score = max(10, min(100, reliability_score))
 
     # ── Overall Score ──
@@ -144,6 +155,13 @@ def _algorithmic_scoring(
         pros.append(f"Eco-friendly ({sustainability.get('eco_label', 'Excellent')})")
     elif green_score < 35:
         cons.append(f"High carbon footprint ({sustainability.get('total_emissions_kg', 0)} kg CO2e)")
+        
+    # Fragility pros/cons
+    if fragility > 70:
+        if route["mode"] in ["sea", "multimodal"]:
+            cons.append("High risk of damage for fragile goods")
+        elif route["mode"] in ["air", "road"]:
+            pros.append("Safer direct handling for fragile goods")
 
     # Risk scenario cons
     if time_penalty > 0:
@@ -177,6 +195,7 @@ async def evaluator_node(state: ShipmentState, llm=None) -> Dict[str, Any]:
     sustainability_data = state.get("sustainability_data", [])
     risk_scenario = state.get("risk_scenario", {})
     constraints = state.get("parsed_constraints", {})
+    cargo_profile = state.get("cargo_profile", {})
 
     if not routes:
         return {
@@ -208,7 +227,7 @@ async def evaluator_node(state: ShipmentState, llm=None) -> Dict[str, Any]:
 
         scores = _algorithmic_scoring(
             route, pricing, weather, congestion, sustainability, risk_penalty,
-            constraints, all_prices
+            constraints, all_prices, cargo_profile
         )
 
         scored.append({

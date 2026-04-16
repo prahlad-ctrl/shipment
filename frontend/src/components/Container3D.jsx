@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Box, Edges, Text } from '@react-three/drei';
 import { Package } from 'lucide-react';
 
-export default function Container3D({ constraints }) {
+export default function Container3D({ constraints, spatialYield }) {
   // Teu standard internal dims: 5.9m L x 2.35m W x 2.39m H
   const TEU_DIMS = [5.9, 2.39, 2.35];
 
@@ -76,8 +76,25 @@ export default function Container3D({ constraints }) {
     <div className="glass-card-static" style={{ height: '300px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: '1rem', left: '1rem', zIndex: 10, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>
         <Package size={18} style={{ color: 'var(--accent-purple)' }}/>
-        3D Cargo Load
+        3D Cargo Load (TEU)
       </div>
+      
+      {spatialYield && (
+        <div style={{ position: 'absolute', top: '3rem', left: '1rem', zIndex: 10, background: 'rgba(0,0,0,0.6)', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid var(--glass-border)' }}>
+          <div style={{ color: spatialYield.utilization_percentage > 80 ? 'var(--accent-emerald)' : spatialYield.utilization_percentage < 40 ? 'var(--accent-rose)' : 'var(--accent-amber)', fontSize: '1.2rem', fontWeight: 'bold' }}>
+            {spatialYield.utilization_percentage}% Utilized
+          </div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+            Allocated: {spatialYield.teu_volume} TEU
+          </div>
+        </div>
+      )}
+      
+      {spatialYield?.optimization_warning && (
+        <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', right: '1rem', zIndex: 10, background: 'rgba(255, 50, 50, 0.1)', borderLeft: '3px solid var(--accent-rose)', padding: '0.5rem', borderRadius: '0.25rem', color: 'white', fontSize: '0.75rem', maxWidth: '300px' }}>
+          {spatialYield.optimization_warning}
+        </div>
+      )}
       
       <Canvas camera={{ position: [8, 4, 8], fov: 45 }}>
         <ambientLight intensity={0.7} />
@@ -102,7 +119,7 @@ export default function Container3D({ constraints }) {
         <gridHelper args={[10, 10, '#ffffff', '#ffffff']} position={[0, -TEU_DIMS[1]/2 - 0.01, 0]} opacity={0.1} transparent />
       </Canvas>
       
-      <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+      <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
         Total Packed: {boxes.length} units
       </div>
     </div>

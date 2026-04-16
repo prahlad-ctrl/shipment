@@ -18,6 +18,9 @@ from langgraph.graph import StateGraph, END
 
 from agent.state import ShipmentState
 from agent.nodes.parser import parser_node
+from agent.nodes.cargo_analysis import cargo_analysis_node
+from agent.nodes.spatial_yield import spatial_yield_node
+from agent.nodes.compliance import compliance_node
 from agent.nodes.hub_resolver import hub_resolver_node
 from agent.nodes.route_generator import route_generator_node
 from agent.nodes.risk_scenario import risk_scenario_node
@@ -28,6 +31,7 @@ from agent.nodes.sustainability import sustainability_node
 from agent.nodes.evaluator import evaluator_node
 from agent.nodes.negotiation import negotiation_node
 from agent.nodes.decision import decision_node
+from agent.nodes.smart_contract import smart_contract_node
 
 load_dotenv()
 
@@ -55,20 +59,17 @@ def _get_llm():
     # Try OpenAI SECOND
     openai_key = os.getenv("OPENAI_API_KEY", "")
     
-    # [TEMPORARY FIX]: User's current key is out of quota causing 25s hang delays.
-    if openai_key.startswith("sk-proj-lITxWK"):
-        openai_key = ""
-
     if openai_key and openai_key != "your_openai_api_key_here":
         try:
             from langchain_openai import ChatOpenAI
             llm = ChatOpenAI(
-                model="gpt-4o-mini",
+                model="gpt-4o",
                 openai_api_key=openai_key,
                 temperature=0.1,
                 max_tokens=2048
             )
             print("[OK] Using OpenAI LLM")
+            return llm
         except Exception as e:
             print(f"[WARN] OpenAI init failed: {e}")
 
@@ -108,6 +109,15 @@ def get_llm():
 async def _parser(state: ShipmentState) -> Dict[str, Any]:
     return await parser_node(state, llm=get_llm())
 
+async def _cargo_analysis(state: ShipmentState) -> Dict[str, Any]:
+    return await cargo_analysis_node(state, llm=get_llm())
+
+async def _spatial_yield(state: ShipmentState) -> Dict[str, Any]:
+    return await spatial_yield_node(state, llm=get_llm())
+
+async def _compliance(state: ShipmentState) -> Dict[str, Any]:
+    return await compliance_node(state, llm=get_llm())
+
 async def _hub_resolver(state: ShipmentState) -> Dict[str, Any]:
     return await hub_resolver_node(state, llm=get_llm())
 
@@ -137,6 +147,9 @@ async def _negotiation(state: ShipmentState) -> Dict[str, Any]:
 
 async def _decision(state: ShipmentState) -> Dict[str, Any]:
     return await decision_node(state, llm=get_llm())
+
+async def _smart_contract(state: ShipmentState) -> Dict[str, Any]:
+    return await smart_contract_node(state, llm=get_llm())
 
 
 # ── Parallel enrichment node ────────────────────────────────────────────────
@@ -204,6 +217,9 @@ def build_graph() -> StateGraph:
 
     # Add nodes
     graph.add_node("parser", _parser)
+    graph.add_node("cargo_analysis", _cargo_analysis)
+    graph.add_node("spatial_yield", _spatial_yield)
+    graph.add_node("compliance", _compliance)
     graph.add_node("hub_resolver", _hub_resolver)
     graph.add_node("route_generator", _route_generator)
     graph.add_node("risk_scenario", _risk_scenario)
@@ -211,13 +227,17 @@ def build_graph() -> StateGraph:
     graph.add_node("evaluator", _evaluator)
     graph.add_node("negotiation", _negotiation)
     graph.add_node("decision", _decision)
+    graph.add_node("smart_contract", _smart_contract)
     graph.add_node("abort", _abort_node)
 
     # Set entry point
     graph.set_entry_point("parser")
 
-    # Parser → Hub Resolver
-    graph.add_edge("parser", "hub_resolver")
+    # Parser → Cargo Analysis → Spatial Yield → Compliance → Hub Resolver
+    graph.add_edge("parser", "cargo_analysis")
+    graph.add_edge("cargo_analysis", "spatial_yield")
+    graph.add_edge("spatial_yield", "compliance")
+    graph.add_edge("compliance", "hub_resolver")
 
     # Conditional edge after hub resolver
     graph.add_conditional_edges(
@@ -232,7 +252,8 @@ def build_graph() -> StateGraph:
     graph.add_edge("enrichment", "evaluator")
     graph.add_edge("evaluator", "negotiation")
     graph.add_edge("negotiation", "decision")
-    graph.add_edge("decision", END)
+    graph.add_edge("decision", "smart_contract")
+    graph.add_edge("smart_contract", END)
     graph.add_edge("abort", END)
 
     return graph.compile()
@@ -252,6 +273,7 @@ async def run_agent(query: str, world_event: str = "normal", chat_history=None, 
         "chat_history": chat_history,
         "target_language": target_language,
         "parsed_constraints": parsed_constraints,
+        "cargo_profile": None,
         "resolved_hubs": None,
         "risk_scenario": None,
         "route_candidates": None,
@@ -286,6 +308,7 @@ async def run_agent_streaming(query: str, world_event: str = "normal", chat_hist
         "chat_history": chat_history,
         "target_language": target_language,
         "parsed_constraints": parsed_constraints,
+        "cargo_profile": None,
         "resolved_hubs": None,
         "risk_scenario": None,
         "route_candidates": None,
@@ -322,6 +345,10 @@ async def run_agent_streaming(query: str, world_event: str = "normal", chat_hist
             "reasoning_summary": event.get("reasoning_summary"),
             "trade_off_analysis": event.get("trade_off_analysis"),
             "parsed_constraints": event.get("parsed_constraints"),
+            "cargo_profile": event.get("cargo_profile"),
+            "spatial_yield": event.get("spatial_yield"),
+            "customs_compliance": event.get("customs_compliance"),
+            "smart_contract": event.get("smart_contract"),
             "reasoning_trace": event.get("reasoning_trace", []),
             "sustainability_data": event.get("sustainability_data", []),
             "risk_scenario": event.get("risk_scenario"),

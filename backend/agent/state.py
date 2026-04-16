@@ -28,6 +28,15 @@ class ShipmentState(TypedDict):
     # Parser output
     parsed_constraints: Optional[Dict[str, Any]]
     
+    # Cargo Analysis output
+    cargo_profile: Optional[Dict[str, Any]]
+    
+    # Spatial Yield / Bin Packing output
+    spatial_yield: Optional[Dict[str, Any]]
+    
+    # Customs Compliance output
+    customs_compliance: Optional[Dict[str, Any]]
+    
     # Hub Resolver output
     resolved_hubs: Optional[Dict[str, Any]]
     
@@ -54,6 +63,9 @@ class ShipmentState(TypedDict):
     alternatives: Optional[List[Dict[str, Any]]]
     reasoning_summary: Optional[str]
     trade_off_analysis: Optional[str]
+    
+    # Generated code output
+    smart_contract: Optional[Dict[str, Any]]
     
     # Accumulated reasoning trace (append-only via operator.add)
     reasoning_trace: Annotated[List[Dict[str, Any]], operator.add]

@@ -73,5 +73,14 @@
     "mfa_enabled": false,
     "auth_provider": "google",
     "created_at": "2026-04-16T16:44:09.123837+00:00"
+  },
+  "yogamers135@gmail.com": {
+    "name": "BRUTE BOMBER",
+    "password_hash": "",
+    "salt": "",
+    "role": "user",
+    "mfa_enabled": false,
+    "auth_provider": "google",
+    "created_at": "2026-04-16T21:00:44.518710+00:00"
   }
 }

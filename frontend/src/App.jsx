@@ -5,6 +5,7 @@ import ShipmentInput from './components/ShipmentInput';
 import AgentReasoningStream from './components/AgentReasoningStream';
 import CopilotChat from './components/CopilotChat';
 import DecisionSummary from './components/DecisionSummary';
+import CargoProfile from './components/CargoProfile';
 import RouteMap from './components/RouteMap';
 import RouteComparison from './components/RouteComparison';
 import CostBreakdown from './components/CostBreakdown';
@@ -117,7 +118,12 @@ export default function App() {
               sustainabilityData={result.sustainability_data}
               negotiationLog={result.negotiation_log}
               parsedConstraints={result.parsed_constraints}
+              customsCompliance={result.customs_compliance}
+              smartContract={result.smart_contract}
+              spatialYield={result.spatial_yield}
             />
+
+            <CargoProfile profile={result.cargo_profile} />
 
             <CopilotChat onSubmit={handleSubmit} isLoading={isLoading} />
 

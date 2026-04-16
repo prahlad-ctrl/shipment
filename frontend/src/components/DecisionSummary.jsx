@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { Trophy, DollarSign, Clock, ShieldCheck, BarChart3, Leaf } from 'lucide-react';
+import { Trophy, DollarSign, Clock, ShieldCheck, BarChart3, Leaf, FileKey } from 'lucide-react';
 import { formatCurrency, formatDays, capitalize } from '../utils/formatters';
 import Container3D from './Container3D';
 import SmartContractEscrow from './SmartContractEscrow';
 
-export default function DecisionSummary({ recommendation, reasoningSummary, tradeOffAnalysis, sustainabilityData, negotiationLog, parsedConstraints }) {
+export default function DecisionSummary({ recommendation, reasoningSummary, tradeOffAnalysis, sustainabilityData, negotiationLog, parsedConstraints, customsCompliance, smartContract, spatialYield }) {
   if (!recommendation) return null;
 
   const route = recommendation.route;
@@ -139,12 +139,49 @@ export default function DecisionSummary({ recommendation, reasoningSummary, trad
         )}
 
         {/* --- ALL IN EXTRA FEATURES --- */}
-        <Container3D constraints={parsedConstraints} />
+        
+        {customsCompliance && (
+          <div className="decision-reasoning" style={{ marginTop: 'var(--space-xl)', borderLeft: '4px solid var(--accent-amber)' }}>
+            <div className="decision-reasoning-label" style={{ color: 'var(--accent-amber)' }}>
+              <FileKey size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+              Customs & Regulatory Intelligence
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              <span style={{ padding: '2px 8px', background: 'rgba(255,150,0,0.1)', color: 'var(--accent-amber)', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                HS Code: {customsCompliance.hs_code}
+              </span>
+              <span style={{ padding: '2px 8px', background: 'rgba(255,150,0,0.1)', color: 'var(--accent-amber)', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                Tariffs: {formatCurrency(customsCompliance.estimated_tariffs_usd)}
+              </span>
+            </div>
+            
+            {customsCompliance.flagged_regulations?.length > 0 && (
+              <div style={{ marginBottom: '8px' }}>
+                <strong style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Blocked by Regulations:</strong>
+                <ul style={{ margin: '4px 0 0 16px', fontSize: '0.85rem', color: 'var(--accent-rose)' }}>
+                  {customsCompliance.flagged_regulations.map((reg, i) => <li key={i}>{reg}</li>)}
+                </ul>
+              </div>
+            )}
+            
+            {customsCompliance.required_documents?.length > 0 && (
+              <div>
+                <strong style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Required Docs:</strong>
+                <ul style={{ margin: '4px 0 0 16px', fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                  {customsCompliance.required_documents.map((doc, i) => <li key={i}>{doc}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        <Container3D constraints={parsedConstraints} spatialYield={spatialYield} />
 
         <SmartContractEscrow 
           cost={cost} 
           routeId={route?.id || 'sim_route'}
           weatherData={recommendation.weather}
+          smartContract={smartContract}
         />
         
       </motion.div>
