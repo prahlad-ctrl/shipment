@@ -44,5 +44,25 @@
     "role": "user",
     "mfa_enabled": true,
     "created_at": "2026-04-16T10:09:40.956288+00:00"
+  },
+  "nk7378541@gmail.com": {
+    "name": "prahlad",
+    "password_hash": "e34b52b3ffe1b89287440d586eada49ae585c3ec4e91db8b3a314739ef3219b1",
+    "salt": "f24609b5ac3de78481bfbd523f91e575eefd9090d4b6c7de538b9f3b65d1b2f6",
+    "role": "user",
+    "mfa_enabled": true,
+    "created_at": "2026-04-16T10:49:38.868478+00:00",
+    "pending_otp": "110408",
+    "otp_expires": 1776337038.817284
+  },
+  "nk7378541@gmai.com": {
+    "name": "Naveen kumar",
+    "password_hash": "918625b8d20c8954e1bd610591bdb56a45f34946aa65d06a745ee67bcea0ac93",
+    "salt": "16f80450963aa7939be1fa2c80bf84249de6ddbefe832d6f2f7109b89e9ec78a",
+    "role": "user",
+    "mfa_enabled": true,
+    "created_at": "2026-04-16T10:57:08.231094+00:00",
+    "pending_otp": "739623",
+    "otp_expires": 1776337335.6302843
   }
 }
