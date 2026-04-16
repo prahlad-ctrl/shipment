@@ -1,0 +1,290 @@
+# 🚢 ShipRoute AI — Intelligent Shipment Orchestration Agent
+
+> AI-powered multi-agent system that finds the optimal shipping route across Air, Sea, Road, and Rail — factoring in cost, transit time, weather risk, port congestion, and carbon emissions in real-time.
+
+---
+
+## 📌 Problem Statement
+
+Global supply chain logistics requires evaluating **dozens of variables** — transport modes, carrier pricing, weather disruptions, port congestion, geopolitical events — just to ship a single package. Logistics managers spend hours comparing options manually, often missing critical risk factors that lead to delayed deliveries and budget overruns.
+
+**There is no single tool** that combines intelligent route generation, real-time risk assessment, cost optimization, and sustainability tracking into one decision engine.
+
+---
+
+## 💡 Solution
+
+**ShipRoute AI** is a **multi-agent AI orchestration platform** that automates the entire shipment planning lifecycle:
+
+1. **Natural Language Input** — Describe your shipment in plain English (e.g., *"Ship 500kg from Dubai to Rotterdam within 5 days under $4000"*)
+2. **AI-Powered Parsing** — Extracts origin, destination, weight, deadline, budget, and priority using LLM
+3. **Multi-Modal Route Generation** — Dynamically generates route candidates across **Air, Sea, Road, and Rail** with real geographic feasibility checks (OSRM land-connectivity verification)
+4. **Parallel Risk Enrichment** — Simultaneously evaluates pricing, weather, port congestion, and carbon sustainability for each route
+5. **Intelligent Scoring & Recommendation** — Scores all routes on a weighted composite scale and recommends the optimal choice
+6. **Interactive Visualization** — Renders routes on a real-world interactive map (Leaflet/OpenStreetMap) with detailed cost breakdowns and comparison cards
+7. **World Event Simulation** — Simulate disruptions like Suez Canal blockage, port strikes, or Atlantic storms to see how routes adapt
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+| Technology | Purpose |
+|---|---|
+| **Python 3.11+** | Core backend language |
+| **FastAPI** | High-performance async REST API framework |
+| **LangGraph** | Multi-agent orchestration graph (directed acyclic pipeline) |
+| **LangChain** | LLM abstraction layer for prompt engineering |
+| **OpenAI GPT-4o-mini** | Primary LLM for natural language parsing & reasoning |
+| **Google Gemini** | Secondary LLM fallback |
+| **Ollama** | Local LLM fallback (offline mode) |
+| **Pydantic** | Request/response schema validation |
+| **OSRM API** | Road connectivity verification (land-bridge detection) |
+| **Nominatim API** | Geocoding for arbitrary global locations |
+| **Uvicorn** | ASGI server with hot-reload |
+
+### Frontend
+| Technology | Purpose |
+|---|---|
+| **React 19** | Component-based UI framework |
+| **Vite 8** | Lightning-fast dev server & bundler |
+| **Leaflet + React-Leaflet** | Interactive world map with route polylines |
+| **Framer Motion** | Smooth micro-animations & transitions |
+| **Lucide React** | Premium icon library |
+| **Vanilla CSS** | Custom glassmorphic dark-mode design system |
+
+### Data & APIs
+| Source | Purpose |
+|---|---|
+| `ports.json` | Pre-indexed coordinates for 15+ major logistics hubs |
+| `carriers.json` | Carrier database (Air, Sea, Road, Rail) with base rates |
+| `routes_db.json` | Pre-defined shipping corridors with leg-level details |
+| **OpenStreetMap/CARTO** | Map tile layer for interactive visualization |
+
+---
+
+## 🏗️ Architecture — Model View Controller (MVC)
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   FRONTEND (View)                   │
+│                  React + Vite + CSS                 │
+├─────────────────────────────────────────────────────┤
+│  Login.jsx          │  Auth gate (Sign In / Sign Up)│
+│  ShipmentInput.jsx  │  Query input + world events   │
+│  AgentReasoning.jsx │  Live reasoning stream        │
+│  DecisionSummary.jsx│  Recommended route + metrics  │
+│  RouteMap.jsx       │  Interactive Leaflet map       │
+│  RouteComparison.jsx│  Side-by-side route cards     │
+│  CostBreakdown.jsx  │  Itemized pricing table       │
+│  RouteCard.jsx      │  Individual route score card  │
+└────────────────┬────────────────────────────────────┘
+                 │ HTTP / SSE (Server-Sent Events)
+                 ▼
+┌─────────────────────────────────────────────────────┐
+│                BACKEND (Controller)                 │
+│              FastAPI + LangGraph Engine             │
+├─────────────────────────────────────────────────────┤
+│  api/routes.py      │  REST endpoints & SSE stream  │
+│  api/schemas.py     │  Pydantic request/response    │
+│  agent/graph.py     │  LangGraph pipeline builder   │
+│  agent/state.py     │  Shared TypedDict state       │
+└────────────────┬────────────────────────────────────┘
+                 │ Internal Pipeline (LangGraph DAG)
+                 ▼
+┌─────────────────────────────────────────────────────┐
+│              AGENT NODES (Model / Logic)            │
+│          Multi-Agent AI Processing Pipeline         │
+├─────────────────────────────────────────────────────┤
+│  parser.py          │  NLP → structured constraints │
+│  hub_resolver.py    │  Location → logistics hub     │
+│  route_generator.py │  Generate multi-modal routes  │
+│  risk_scenario.py   │  World event impact analysis  │
+│  pricing.py         │  Cost estimation per route    │
+│  weather.py         │  Weather risk assessment      │
+│  port_congestion.py │  Port delay forecasting       │
+│  sustainability.py  │  Carbon emission calculation  │
+│  evaluator.py       │  Composite scoring engine     │
+│  decision.py        │  Final recommendation logic   │
+├─────────────────────────────────────────────────────┤
+│              TOOLS (Model / Data Layer)             │
+├─────────────────────────────────────────────────────┤
+│  geo_utils.py       │  Geocoding, distance, OSRM    │
+│  pricing_simulator  │  Carrier rate calculations    │
+│  weather_simulator  │  Weather condition generation │
+│  port_simulator     │  Congestion level simulation  │
+└─────────────────────────────────────────────────────┘
+```
+
+### Agent Pipeline Flow
+
+```
+User Query
+    │
+    ▼
+┌─────────┐    ┌──────────────┐    ┌─────────────────┐    ┌────────────────┐
+│ Parser  │───▶│ Hub Resolver │───▶│ Route Generator │───▶│ Risk Scenario  │
+└─────────┘    └──────────────┘    └─────────────────┘    └───────┬────────┘
+                                                                  │
+                                          ┌───────────────────────┼───────────────────────┐
+                                          │                       │                       │
+                                          ▼                       ▼                       ▼
+                                   ┌──────────┐           ┌───────────┐           ┌──────────────┐
+                                   │ Pricing  │           │ Weather   │           │ Congestion   │
+                                   └────┬─────┘           └─────┬─────┘           └──────┬───────┘
+                                        │                       │                        │
+                                        │         ┌─────────────────────┐                │
+                                        │         │   Sustainability    │                │
+                                        │         └──────────┬──────────┘                │
+                                        │                    │                           │
+                                        └────────────────────┼───────────────────────────┘
+                                                             │
+                                                             ▼
+                                                     ┌──────────────┐    ┌───────────┐
+                                                     │  Evaluator   │───▶│ Decision  │───▶ Result
+                                                     └──────────────┘    └───────────┘
+```
+
+> **Pricing, Weather, Congestion, and Sustainability** run in **parallel** for maximum performance.
+
+---
+
+## 🚀 How to Run
+
+### Prerequisites
+- **Python 3.11+**
+- **Node.js 18+**
+- An **OpenAI API key** (or Google Gemini key, or local Ollama instance)
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/idek-just-anything-.git
+cd idek-just-anything-
+```
+
+### 2. Backend Setup
+```bash
+cd backend
+
+# Create virtual environment (recommended)
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS/Linux
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Edit .env and add your API key:
+#   OPENAI_API_KEY=sk-your-key-here
+#   (or GOOGLE_API_KEY for Gemini)
+
+# Start the backend server
+python main.py
+```
+The backend will start at **http://localhost:8000**. API docs available at **/docs**.
+
+### 3. Frontend Setup
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the dev server
+npm run dev
+```
+The frontend will start at **http://localhost:5173**.
+
+### 4. Use the Application
+1. Open **http://localhost:5173** in your browser
+2. **Sign Up / Sign In** on the login page
+3. Enter a shipment query or click a preset (e.g., *"Dubai → Rotterdam"*)
+4. Select world conditions (Normal, Suez Canal Blocked, Port Strike, etc.)
+5. Click **Plan Route** and watch the AI agents reason in real-time
+6. View the recommended route on the interactive map with full cost breakdown
+
+---
+
+## 📁 Project Structure
+
+```
+idek-just-anything-/
+├── backend/
+│   ├── main.py                 # FastAPI app entry point
+│   ├── requirements.txt        # Python dependencies
+│   ├── .env.example            # Environment variables template
+│   ├── api/
+│   │   ├── routes.py           # REST API endpoints
+│   │   └── schemas.py          # Pydantic data models
+│   ├── agent/
+│   │   ├── graph.py            # LangGraph pipeline orchestration
+│   │   ├── state.py            # Shared pipeline state definition
+│   │   └── nodes/
+│   │       ├── parser.py       # Natural language → constraints
+│   │       ├── hub_resolver.py # Location → logistics hub
+│   │       ├── route_generator.py  # Multi-modal route creation
+│   │       ├── risk_scenario.py    # World event impact analysis
+│   │       ├── pricing.py      # Cost estimation
+│   │       ├── weather.py      # Weather risk assessment
+│   │       ├── port_congestion.py  # Port delay forecasting
+│   │       ├── sustainability.py   # Carbon emission tracking
+│   │       ├── evaluator.py    # Composite scoring engine
+│   │       └── decision.py     # Final recommendation
+│   ├── tools/
+│   │   ├── geo_utils.py        # Geocoding, OSRM, Haversine
+│   │   ├── pricing_simulator.py
+│   │   ├── weather_simulator.py
+│   │   └── port_simulator.py
+│   └── data/
+│       ├── ports.json          # Global logistics hub coordinates
+│       ├── carriers.json       # Carrier database (air/sea/road/rail)
+│       └── routes_db.json      # Pre-defined shipping corridors
+│
+├── frontend/
+│   ├── index.html              # HTML entry point
+│   ├── package.json            # Node.js dependencies
+│   ├── vite.config.js          # Vite + React plugin config
+│   └── src/
+│       ├── main.jsx            # React entry point
+│       ├── App.jsx             # Root component with auth gate
+│       ├── index.css           # Glassmorphic design system
+│       ├── components/
+│       │   ├── Login.jsx       # Sign In / Sign Up page
+│       │   ├── Header.jsx      # App header with branding
+│       │   ├── ShipmentInput.jsx   # Query input + presets
+│       │   ├── AgentReasoningStream.jsx  # Live reasoning timeline
+│       │   ├── DecisionSummary.jsx # Recommendation dashboard
+│       │   ├── RouteMap.jsx    # Interactive Leaflet map
+│       │   ├── RouteComparison.jsx # Route cards grid
+│       │   ├── RouteCard.jsx   # Individual route card
+│       │   ├── CostBreakdown.jsx   # Pricing table
+│       │   ├── WeatherBadge.jsx    # Weather risk indicator
+│       │   └── CongestionMeter.jsx # Port congestion gauge
+│       └── utils/
+│           ├── api.js          # Backend API client (fetch + SSE)
+│           └── formatters.js   # Currency, date, mode formatters
+│
+└── README.md
+```
+
+---
+
+## 🌍 Key Features
+
+- **🤖 Multi-Agent AI Pipeline** — 10 specialized agents working in concert via LangGraph
+- **✈️🚢🚛🚂 4 Transport Modes** — Air, Sea, Road, Rail with feasibility checks
+- **🗺️ Interactive Map** — Real-world route visualization on OpenStreetMap
+- **⚡ Real-Time Streaming** — Watch AI agents reason step-by-step via SSE
+- **🌪️ World Event Simulation** — Test routes against Suez blockage, port strikes, storms
+- **📊 Composite Scoring** — Cost, time, risk, reliability weighted scoring
+- **🌱 Sustainability Tracking** — CO₂ emissions per route with eco-labels
+- **🔒 Authentication** — Sign In / Sign Up with session management
+- **🎨 Premium UI** — Glassmorphic dark-mode design with micro-animations
+
+---
+
+## 📜 License
+
+MIT License — Built for HackStrom 2026

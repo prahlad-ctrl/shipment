@@ -1,0 +1,48 @@
+{
+  "nk654@gmail.com": {
+    "name": "Naveen kumar",
+    "password_hash": "889fd4bf5b8b4c252f1685ea841a662676967ce15788639b69b55c278212e45c",
+    "salt": "de1575138057a0f5cbf10cb7e7b3474312bc998ab030035691d2d80a50d47d94",
+    "role": "admin",
+    "mfa_enabled": true,
+    "created_at": "2026-04-16T09:28:35.627277+00:00",
+    "pending_otp": "283389",
+    "otp_expires": 1776332029.9324915
+  },
+  "kk0420@srmist.edu.in": {
+    "name": "kapil",
+    "password_hash": "9d0ff4b07814bf50c86ab615066c06d4316b81b74eeadefc68e7f51d9366daaa",
+    "salt": "776e9d0794c3868ac407e41ac76ad6122de283adfdeeb24a4d5c29bf703ad254",
+    "role": "user",
+    "mfa_enabled": true,
+    "created_at": "2026-04-16T09:29:41.665989+00:00",
+    "pending_otp": "807539",
+    "otp_expires": 1776332094.4525318
+  },
+  "kk2989558@gmail.com": {
+    "name": "Kapil kumar",
+    "password_hash": "",
+    "salt": "",
+    "role": "user",
+    "mfa_enabled": false,
+    "auth_provider": "google",
+    "created_at": "2026-04-16T09:49:01.007432+00:00"
+  },
+  "bikhil098@gmail.com": {
+    "name": "Kapil Kumar",
+    "password_hash": "",
+    "salt": "",
+    "role": "user",
+    "mfa_enabled": false,
+    "auth_provider": "google",
+    "created_at": "2026-04-16T09:54:32.177950+00:00"
+  },
+  "kk2989558@gmal.com": {
+    "name": "Kapil kumar",
+    "password_hash": "89dce0a74bba0c267c8f6c4c8a9a13f5815e2ca248caf84daa2183fdd61f637f",
+    "salt": "5c36dded0c05657134d57bfb58af4ea9b7c80e85b62093485a26c97c46513774",
+    "role": "user",
+    "mfa_enabled": true,
+    "created_at": "2026-04-16T10:09:40.956288+00:00"
+  }
+}

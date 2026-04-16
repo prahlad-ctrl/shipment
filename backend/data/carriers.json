@@ -1,0 +1,162 @@
+{
+  "air": [
+    {
+      "id": "emirates_cargo",
+      "name": "Emirates SkyCargo",
+      "mode": "air",
+      "base_rate_per_kg": 3.20,
+      "fuel_surcharge_pct": 0.18,
+      "min_charge_usd": 250,
+      "max_weight_kg": 50000,
+      "reliability_score": 0.95,
+      "avg_transit_speed_kmh": 850,
+      "hub_airports": ["DXB", "LHR", "SIN", "HKG"],
+      "coverage": "global"
+    },
+    {
+      "id": "dhl_express",
+      "name": "DHL Express",
+      "mode": "air",
+      "base_rate_per_kg": 4.50,
+      "fuel_surcharge_pct": 0.15,
+      "min_charge_usd": 150,
+      "max_weight_kg": 30000,
+      "reliability_score": 0.97,
+      "avg_transit_speed_kmh": 800,
+      "hub_airports": ["FRA", "CVG", "HKG", "BOM"],
+      "coverage": "global"
+    },
+    {
+      "id": "fedex_intl",
+      "name": "FedEx International",
+      "mode": "air",
+      "base_rate_per_kg": 4.20,
+      "fuel_surcharge_pct": 0.16,
+      "min_charge_usd": 200,
+      "max_weight_kg": 45000,
+      "reliability_score": 0.96,
+      "avg_transit_speed_kmh": 820,
+      "hub_airports": ["MEM", "CDG", "PVG", "NRT"],
+      "coverage": "global"
+    },
+    {
+      "id": "qatar_cargo",
+      "name": "Qatar Airways Cargo",
+      "mode": "air",
+      "base_rate_per_kg": 2.90,
+      "fuel_surcharge_pct": 0.17,
+      "min_charge_usd": 200,
+      "max_weight_kg": 40000,
+      "reliability_score": 0.93,
+      "avg_transit_speed_kmh": 840,
+      "hub_airports": ["DOH", "LHR", "ORD", "HKG"],
+      "coverage": "global"
+    }
+  ],
+  "sea": [
+    {
+      "id": "maersk",
+      "name": "Maersk Line",
+      "mode": "sea",
+      "base_rate_per_kg": 0.45,
+      "fuel_surcharge_pct": 0.12,
+      "min_charge_usd": 500,
+      "max_weight_kg": 500000,
+      "reliability_score": 0.91,
+      "avg_transit_speed_kmh": 35,
+      "hub_ports": ["NLRTM", "SGSIN", "CNSHA", "AEJEA"],
+      "coverage": "global"
+    },
+    {
+      "id": "msc",
+      "name": "MSC (Mediterranean Shipping)",
+      "mode": "sea",
+      "base_rate_per_kg": 0.38,
+      "fuel_surcharge_pct": 0.14,
+      "min_charge_usd": 450,
+      "max_weight_kg": 500000,
+      "reliability_score": 0.88,
+      "avg_transit_speed_kmh": 33,
+      "hub_ports": ["NLRTM", "DEHAM", "SGSIN", "USLAX"],
+      "coverage": "global"
+    },
+    {
+      "id": "cosco",
+      "name": "COSCO Shipping",
+      "mode": "sea",
+      "base_rate_per_kg": 0.35,
+      "fuel_surcharge_pct": 0.13,
+      "min_charge_usd": 400,
+      "max_weight_kg": 500000,
+      "reliability_score": 0.86,
+      "avg_transit_speed_kmh": 32,
+      "hub_ports": ["CNSHA", "SGSIN", "NLRTM", "HKHKG"],
+      "coverage": "global"
+    },
+    {
+      "id": "hapag_lloyd",
+      "name": "Hapag-Lloyd",
+      "mode": "sea",
+      "base_rate_per_kg": 0.50,
+      "fuel_surcharge_pct": 0.11,
+      "min_charge_usd": 550,
+      "max_weight_kg": 500000,
+      "reliability_score": 0.92,
+      "avg_transit_speed_kmh": 34,
+      "hub_ports": ["DEHAM", "NLRTM", "SGSIN", "USNYC"],
+      "coverage": "global"
+    }
+  ],
+  "road": [
+    {
+      "id": "dhl_freight",
+      "name": "DHL Freight",
+      "mode": "road",
+      "base_rate_per_kg": 1.10,
+      "fuel_surcharge_pct": 0.20,
+      "min_charge_usd": 300,
+      "max_weight_kg": 25000,
+      "reliability_score": 0.93,
+      "avg_transit_speed_kmh": 65,
+      "coverage": "europe_middle_east"
+    },
+    {
+      "id": "db_schenker",
+      "name": "DB Schenker",
+      "mode": "road",
+      "base_rate_per_kg": 0.95,
+      "fuel_surcharge_pct": 0.22,
+      "min_charge_usd": 250,
+      "max_weight_kg": 24000,
+      "reliability_score": 0.91,
+      "avg_transit_speed_kmh": 60,
+      "coverage": "europe"
+    },
+    {
+      "id": "aramex_road",
+      "name": "Aramex Ground",
+      "mode": "road",
+      "base_rate_per_kg": 0.85,
+      "fuel_surcharge_pct": 0.19,
+      "min_charge_usd": 200,
+      "max_weight_kg": 20000,
+      "reliability_score": 0.87,
+      "avg_transit_speed_kmh": 55,
+      "coverage": "middle_east_asia"
+    }
+  ],
+  "rail": [
+    {
+      "id": "db_cargo_eurasia",
+      "name": "DB Cargo Eurasia",
+      "mode": "rail",
+      "base_rate_per_kg": 0.55,
+      "fuel_surcharge_pct": 0.12,
+      "min_charge_usd": 350,
+      "max_weight_kg": 50000,
+      "reliability_score": 0.94,
+      "avg_transit_speed_kmh": 45,
+      "coverage": "global"
+    }
+  ]
+}

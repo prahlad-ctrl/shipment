@@ -1,0 +1,192 @@
+{
+  "corridors": [
+    {
+      "id": "dubai_rotterdam_sea",
+      "origin": "dubai",
+      "destination": "rotterdam",
+      "mode": "sea",
+      "legs": [
+        {"from": "dubai", "to": "jeddah", "mode": "sea", "distance_km": 2950, "typical_hours": 96},
+        {"from": "jeddah", "to": "rotterdam", "mode": "sea", "distance_km": 7800, "typical_hours": 264}
+      ],
+      "total_distance_km": 10750,
+      "typical_days": 15,
+      "notes": "Suez Canal route, standard container shipping"
+    },
+    {
+      "id": "dubai_rotterdam_air",
+      "origin": "dubai",
+      "destination": "rotterdam",
+      "mode": "air",
+      "legs": [
+        {"from": "dubai", "to": "rotterdam", "mode": "air", "distance_km": 5164, "typical_hours": 7}
+      ],
+      "total_distance_km": 5164,
+      "typical_days": 1,
+      "notes": "Direct air freight DXB to AMS, ground transfer to Rotterdam"
+    },
+    {
+      "id": "dubai_rotterdam_multimodal_1",
+      "origin": "dubai",
+      "destination": "rotterdam",
+      "mode": "multimodal",
+      "legs": [
+        {"from": "dubai", "to": "istanbul", "mode": "sea", "distance_km": 4200, "typical_hours": 144},
+        {"from": "istanbul", "to": "rotterdam", "mode": "road", "distance_km": 2800, "typical_hours": 48}
+      ],
+      "total_distance_km": 7000,
+      "typical_days": 8,
+      "notes": "Sea to Istanbul, then road through Europe"
+    },
+    {
+      "id": "dubai_rotterdam_multimodal_2",
+      "origin": "dubai",
+      "destination": "rotterdam",
+      "mode": "multimodal",
+      "legs": [
+        {"from": "dubai", "to": "hamburg", "mode": "air", "distance_km": 5300, "typical_hours": 8},
+        {"from": "hamburg", "to": "rotterdam", "mode": "road", "distance_km": 500, "typical_hours": 6}
+      ],
+      "total_distance_km": 5800,
+      "typical_days": 2,
+      "notes": "Air to Hamburg, short road transfer to Rotterdam"
+    },
+    {
+      "id": "shanghai_la_sea",
+      "origin": "shanghai",
+      "destination": "los_angeles",
+      "mode": "sea",
+      "legs": [
+        {"from": "shanghai", "to": "los_angeles", "mode": "sea", "distance_km": 10400, "typical_hours": 336}
+      ],
+      "total_distance_km": 10400,
+      "typical_days": 14,
+      "notes": "Trans-Pacific direct"
+    },
+    {
+      "id": "shanghai_la_air",
+      "origin": "shanghai",
+      "destination": "los_angeles",
+      "mode": "air",
+      "legs": [
+        {"from": "shanghai", "to": "los_angeles", "mode": "air", "distance_km": 10460, "typical_hours": 12}
+      ],
+      "total_distance_km": 10460,
+      "typical_days": 1,
+      "notes": "Direct air freight PVG to LAX"
+    },
+    {
+      "id": "shanghai_la_multimodal",
+      "origin": "shanghai",
+      "destination": "los_angeles",
+      "mode": "multimodal",
+      "legs": [
+        {"from": "shanghai", "to": "tokyo", "mode": "sea", "distance_km": 1800, "typical_hours": 60},
+        {"from": "tokyo", "to": "los_angeles", "mode": "air", "distance_km": 8800, "typical_hours": 11}
+      ],
+      "total_distance_km": 10600,
+      "typical_days": 4,
+      "notes": "Sea to Tokyo, then air to LA"
+    },
+    {
+      "id": "mumbai_london_sea",
+      "origin": "mumbai",
+      "destination": "london",
+      "mode": "sea",
+      "legs": [
+        {"from": "mumbai", "to": "jeddah", "mode": "sea", "distance_km": 3200, "typical_hours": 108},
+        {"from": "jeddah", "to": "london", "mode": "sea", "distance_km": 8200, "typical_hours": 276}
+      ],
+      "total_distance_km": 11400,
+      "typical_days": 16,
+      "notes": "Via Suez Canal"
+    },
+    {
+      "id": "mumbai_london_air",
+      "origin": "mumbai",
+      "destination": "london",
+      "mode": "air",
+      "legs": [
+        {"from": "mumbai", "to": "london", "mode": "air", "distance_km": 7190, "typical_hours": 9}
+      ],
+      "total_distance_km": 7190,
+      "typical_days": 1,
+      "notes": "Direct air freight BOM to LHR"
+    },
+    {
+      "id": "mumbai_london_multimodal",
+      "origin": "mumbai",
+      "destination": "london",
+      "mode": "multimodal",
+      "legs": [
+        {"from": "mumbai", "to": "dubai", "mode": "air", "distance_km": 1930, "typical_hours": 3},
+        {"from": "dubai", "to": "london", "mode": "air", "distance_km": 5470, "typical_hours": 7}
+      ],
+      "total_distance_km": 7400,
+      "typical_days": 2,
+      "notes": "Air via Dubai hub"
+    },
+    {
+      "id": "singapore_hamburg_sea",
+      "origin": "singapore",
+      "destination": "hamburg",
+      "mode": "sea",
+      "legs": [
+        {"from": "singapore", "to": "colombo", "mode": "sea", "distance_km": 2800, "typical_hours": 96},
+        {"from": "colombo", "to": "jeddah", "mode": "sea", "distance_km": 3400, "typical_hours": 108},
+        {"from": "jeddah", "to": "hamburg", "mode": "sea", "distance_km": 8600, "typical_hours": 288}
+      ],
+      "total_distance_km": 14800,
+      "typical_days": 21,
+      "notes": "Via Suez Canal with stops"
+    },
+    {
+      "id": "hong_kong_new_york_sea",
+      "origin": "hong_kong",
+      "destination": "new_york",
+      "mode": "sea",
+      "legs": [
+        {"from": "hong_kong", "to": "new_york", "mode": "sea", "distance_km": 16600, "typical_hours": 528}
+      ],
+      "total_distance_km": 16600,
+      "typical_days": 22,
+      "notes": "Trans-Pacific via Panama Canal"
+    },
+    {
+      "id": "hong_kong_new_york_air",
+      "origin": "hong_kong",
+      "destination": "new_york",
+      "mode": "air",
+      "legs": [
+        {"from": "hong_kong", "to": "new_york", "mode": "air", "distance_km": 12960, "typical_hours": 16}
+      ],
+      "total_distance_km": 12960,
+      "typical_days": 1,
+      "notes": "Direct air freight HKG to JFK"
+    },
+    {
+      "id": "dubai_mumbai_sea",
+      "origin": "dubai",
+      "destination": "mumbai",
+      "mode": "sea",
+      "legs": [
+        {"from": "dubai", "to": "mumbai", "mode": "sea", "distance_km": 1930, "typical_hours": 72}
+      ],
+      "total_distance_km": 1930,
+      "typical_days": 3,
+      "notes": "Short Arabian Sea crossing"
+    },
+    {
+      "id": "dubai_mumbai_air",
+      "origin": "dubai",
+      "destination": "mumbai",
+      "mode": "air",
+      "legs": [
+        {"from": "dubai", "to": "mumbai", "mode": "air", "distance_km": 1930, "typical_hours": 3}
+      ],
+      "total_distance_km": 1930,
+      "typical_days": 1,
+      "notes": "Direct air freight DXB to BOM"
+    }
+  ]
+}
