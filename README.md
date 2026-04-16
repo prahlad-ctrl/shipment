@@ -2,9 +2,6 @@
 
 > AI-powered multi-agent system that finds the optimal shipping route across Air, Sea, Road, and Rail — factoring in cost, transit time, weather risk, port congestion, and carbon emissions in real-time.
 
-<img width="2375" height="1141" alt="image" src="https://github.com/user-attachments/assets/26a6e918-2ab7-4c97-bfca-e5750f93f64f" />
-
-
 ---
 
 ## 📌 Problem Statement
@@ -58,7 +55,7 @@ Global supply chain logistics requires evaluating **dozens of variables** — tr
 | **Leaflet + React-Leaflet** | Interactive world map with animated route tracking |
 | **Framer Motion** | Smooth micro-animations & transitions |
 | **Lucide React** | Premium icon library |
-| **Vanilla CSS** | Custom glassmorphic dark-mode design system |
+| **Vanilla CSS** | Custom glassmorphic light-mode premium design system |
 
 ### Data & APIs
 | Source | Purpose |
@@ -127,7 +124,22 @@ Global supply chain logistics requires evaluating **dozens of variables** — tr
 └─────────────────────────────────────────────────────┘
 ```
 
-### Agent Pipeline Flow
+### Proper Agentic Workflow (LangGraph Engine)
+
+The backend is driven by a decentralized, multi-agent AI system built using LangGraph. The pipeline is designed around 10 distinct AI agents, operating in a mix of sequential dependencies and parallel enrichment paths.
+
+1. **Parser Node (`parser.py`)**: Consumes raw natural language. Uses an LLM to accurately structure variables: `{origin, destination, budget, deadline, constraints}`. If API quotas exhaust, it triggers an airtight deterministic Regex extraction.
+2. **Hub Resolver Node (`hub_resolver.py`)**: Normalizes vague locations like "Middle East" to exact ports (e.g., *Jebel Ali (AEJEA)*), querying geolocation constraints via OSRM spatial validation.
+3. **Route Generator Node (`route_generator.py`)**: Generates realistic combinatorial multimodal route candidates (Air, Sea, Road, Multimodal) leveraging the `routes_db.json` matrix and active landbridge connectivity algorithms.
+4. **Risk Scenario Node (`risk_scenario.py`)**: Cross-references global configurations (e.g., "Suez Canal blocked"). Reroutes affected sea shipments around the Horn of Africa, instantly recalculating the Haversine distances.
+5. **Parallel Enrichment Nodes** (Executing concurrently to bypass high Latency):
+   - **Pricing Agent (`pricing.py`)**: Extracts raw carrier logs and aggregates Fuel, Freight, and Insurance surcharges dynamically.
+   - **Weather Agent (`weather.py`)**: Assesses cyclone, hurricane, and blizzard anomalies along the specific spatial corridor.
+   - **Port Congestion Agent (`port_congestion.py`)**: Fakes real-time transit queue logic across global seaports.
+   - **Sustainability Agent (`sustainability.py`)**: Tallies the total footprint (Tons CO₂) based on multimodal transport standards and payload weight.
+6. **Evaluator Node (`evaluator.py`)**: Evaluates every route utilizing the parallelly enriched data. Formulates a weighted "Composite Score" (Time, Risk, Budget, and Eco footprint).
+7. **Negotiation Node (`negotiation.py`)**: The AI broker agent. Dynamically drafts and counter-offers proposals to simulated carrier APIs, fetching hidden transit discounts.
+8. **Decision Node (`decision.py`)**: Filters down to the absolute optimal path, caches alternates, and drafts the overarching human-readable summary.
 
 ```
 User Query
@@ -137,26 +149,26 @@ User Query
 │ Parser  │───▶│ Hub Resolver │───▶│ Route Generator │───▶│ Risk Scenario  │
 └─────────┘    └──────────────┘    └─────────────────┘    └───────┬────────┘
                                                                   │
-                                          ┌───────────────────────┼───────────────────────┐
-                                          │                       │                       │
-                                          ▼                       ▼                       ▼
-                                   ┌──────────┐           ┌───────────┐           ┌──────────────┐
-                                   │ Pricing  │           │ Weather   │           │ Congestion   │
-                                   └────┬─────┘           └─────┬─────┘           └──────┬───────┘
-                                        │                       │                        │
-                                        │         ┌─────────────────────┐                │
-                                        │         │   Sustainability    │                │
-                                        │         └──────────┬──────────┘                │
-                                        │                    │                           │
-                                        └────────────────────┼───────────────────────────┘
-                                                             │
-                                                             ▼
-                                                     ┌──────────────┐    ┌─────────────┐    ┌───────────┐
-                                                     │  Evaluator   │───▶│ Negotiator  │───▶│ Decision  │───▶ Result
-                                                     └──────────────┘    └─────────────┘    └───────────┘
+                           ┌───────────────────────────┬──────────┴───────────────┬───────────────────────────┐
+                           ▼                           ▼                          ▼                           ▼
+                   ┌──────────────┐             ┌────────────┐             ┌─────────────┐             ┌──────────────┐
+                   │ Pricing Node │             │ Weather AI │             │ Port Traffic│             │ Eco-Tracking │
+                   └──────┬───────┘             └──────┬─────┘             └──────┬──────┘             └──────┬───────┘
+                          │                            │                          │                           │
+                          └────────────────────────────┼──────────────────────────┼───────────────────────────┘
+                                                       ▼
+                                               ┌──────────────┐
+                                               │  Evaluator   │
+                                               └──────┬───────┘
+                                                      ▼
+                                               ┌──────────────┐
+                                               │  Negotiation │
+                                               └──────┬───────┘
+                                                      ▼
+                                               ┌──────────────┐
+                                               │   Decision   │───▶ Result
+                                               └──────────────┘
 ```
-
-> **Pricing, Weather, Congestion, and Sustainability** run in **parallel** for maximum performance.
 
 ---
 
@@ -169,8 +181,27 @@ User Query
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/idek-just-anything-.git
-cd idek-just-anything-
+git clone https://github.com/your-username/shipment.git
+cd shipment
+```
+
+## 🔑 Environment Variables & API Keys
+
+The application utilizes a cascading LLM fallback engine designed for zero downtime (`Gemini 1.5 Flash` → `GPT-4o-Mini` → `Local Ollama`). To fully leverage AI reasoning, clone the `.env.example` inside `backend/` to `.env` and fill out your keys:
+
+```dotenv
+# 1. Primary Cloud LLM (Highly Recommended)
+GOOGLE_API_KEY=your_gemini_api_key_here    # Primary: Faster and handles long contexts
+OPENAI_API_KEY=your_openai_api_key_here    # Secondary: Fallback
+
+# 2. Local/Offline LLM Fallback (Zero Setup Offline Ops)
+OLLAMA_BASE_URL=http://localhost:11434     # Requires Ollama running locally
+OLLAMA_MODEL=llama3:8b                     
+
+# 3. Microservice / DB Configs
+JWT_SECRET=shiproute-ai-change-this-to-a-random-secret  # Auth
+SMTP_HOST=smtp.gmail.com                   # Optional MFA OTP
+SMTP_PORT=587
 ```
 
 ### 2. Backend Setup
@@ -184,12 +215,6 @@ venv\Scripts\activate        # Windows
 
 # Install dependencies
 pip install -r requirements.txt
-
-# Configure environment
-cp .env.example .env
-# Edit .env and add your API key:
-#   OPENAI_API_KEY=sk-your-key-here
-#   (or GOOGLE_API_KEY for Gemini)
 
 # Start the backend server
 python main.py
