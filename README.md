@@ -181,8 +181,8 @@ User Query
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/idek-just-anything-.git
-cd idek-just-anything-
+git clone https://github.com/your-username/shipment.git
+cd shipment
 ```
 
 ## 🔑 Environment Variables & API Keys
