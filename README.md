@@ -2,6 +2,9 @@
 
 > AI-powered multi-agent system that finds the optimal shipping route across Air, Sea, Road, and Rail — factoring in cost, transit time, weather risk, port congestion, and carbon emissions in real-time.
 
+<img width="2375" height="1141" alt="image" src="https://github.com/user-attachments/assets/26a6e918-2ab7-4c97-bfca-e5750f93f64f" />
+
+
 ---
 
 ## 📌 Problem Statement
