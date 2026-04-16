@@ -1,21 +1,29 @@
 """Prompt templates for agent nodes."""
 
 PARSER_PROMPT = """You are a logistics request parser. Extract structured shipment constraints from a natural language request.
+If chat history is provided, analyze the context to understand how the constraints have evolved, and update the existing constraints based on the user's latest instruction.
 
-Given the user's request, extract:
-- origin: The origin city or port (just the city name, e.g., "Dubai", "Shanghai")
-- destination: The destination city or port (just the city name, e.g., "Rotterdam", "London")
-- weight_kg: Shipment weight in kilograms (convert from other units if needed)
-- deadline_days: Maximum delivery time in days (if mentioned)
-- budget_usd: Maximum budget in USD (convert from other currencies if needed, use approximate rates)
-- priority: One of "cost", "speed", "balanced", "reliability" (infer from context)
-- cargo_type: Type of cargo if mentioned (general, perishable, hazardous, fragile)
+Given the user's request and context, extract:
+- origin: The origin city or port
+- destination: The destination city or port
+- weight_kg: Shipment weight in kilograms
+- deadline_days: Maximum delivery time in days
+- budget_usd: Maximum budget in USD
+- priority: One of "cost", "speed", "balanced", "reliability"
+- cargo_type: Type of cargo if mentioned 
+- cargo_items: A list of objects {{type, qty, dim: [length, width, height]}} if the user explicitly specifies how many boxes/pallets/crates and their dimensions (in meters or feet). If dimensions are in feet, convert exactly to meters. If unmentioned, do not fabricate dimensions.
 - special_requirements: Any special requirements mentioned
 
-If a field is not explicitly mentioned, use null.
+If a field is not explicitly mentioned but exists in the Current Constraints, KEEP the old value. 
+If a field is not mentioned at all, use null.
 If priority is not clear, default to "balanced".
 
-User request: {query}
+Latest User Request: {query}
+Chat History: {chat_history}
+Current Constraints (if continuing a chat): {current_constraints}
+Target Language Output (if specified, translate output metadata appropriately): {target_language}
+
+CRITICAL: You must TRANSLATE the parsed constraints entirely into ENGLISH. All values for origin, destination, cargo_type, special considerations, etc. MUST be valid English words. Do not skip this step even if the user input is in another language like Hindi, Spanish, or Chinese.
 
 Respond with ONLY a valid JSON object matching the schema above. No extra text."""
 

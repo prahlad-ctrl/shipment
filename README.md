@@ -16,13 +16,16 @@ Global supply chain logistics requires evaluating **dozens of variables** — tr
 
 **ShipRoute AI** is a **multi-agent AI orchestration platform** that automates the entire shipment planning lifecycle:
 
-1. **Natural Language Input** — Describe your shipment in plain English (e.g., *"Ship 500kg from Dubai to Rotterdam within 5 days under $4000"*)
-2. **AI-Powered Parsing** — Extracts origin, destination, weight, deadline, budget, and priority using LLM
-3. **Multi-Modal Route Generation** — Dynamically generates route candidates across **Air, Sea, Road, and Rail** with real geographic feasibility checks (OSRM land-connectivity verification)
-4. **Parallel Risk Enrichment** — Simultaneously evaluates pricing, weather, port congestion, and carbon sustainability for each route
-5. **Intelligent Scoring & Recommendation** — Scores all routes on a weighted composite scale and recommends the optimal choice
-6. **Interactive Visualization** — Renders routes on a real-world interactive map (Leaflet/OpenStreetMap) with detailed cost breakdowns and comparison cards
-7. **World Event Simulation** — Simulate disruptions like Suez Canal blockage, port strikes, or Atlantic storms to see how routes adapt
+1. **Multi-Modal Input (Text, Voice, Vision)** — Input parameters via natural language, speak into the mic, or upload a photo of a shipping manifest for automatic AI extraction.
+2. **AI-Powered Parsing & Fallback Engine** — Extracts origin, destination, weight, dimensions, and budget using LLM. A robust regex fallback engine ensures **zero-downtime** even if the AI hits rate limits.
+3. **Multi-Modal Route Generation** — Dynamically generates route candidates across **Air, Sea, Road, and Rail** with real geographic feasibility checks (OSRM land-connectivity verification).
+4. **Parallel Risk Enrichment** — Simultaneously evaluates pricing, weather, port congestion, and carbon sustainability for each route.
+5. **Intelligent Scoring & Recommendation** — Scores all routes on a weighted composite scale and recommends the optimal choice.
+6. **Interactive World Map & Animated Tracker** — Renders routes on a real-world interactive map with an animated timeline scrubber to simulate transport phases geographically.
+7. **3D Volumetric Cargo Engine** — Leverages WebGL/Three.js to visualize precise box/pallet dimensions packed inside a standard TEU container.
+8. **Automated AI Negotiation** — A dedicated LangGraph Broker Agent negotiates spot discounts dynamically with the chosen carrier.
+9. **Blockchain Smart Contract Escrow** — Simulates a Web3 Escrow sequence confirming payment lock, decentralized tracking handoffs, and final cryptographic release on delivery.
+10. **World Event Simulation** — Simulate disruptions like Suez Canal blockage, port strikes, or Atlantic storms to see how routes dynamically adapt.
 
 ---
 
@@ -48,7 +51,8 @@ Global supply chain logistics requires evaluating **dozens of variables** — tr
 |---|---|
 | **React 19** | Component-based UI framework |
 | **Vite 8** | Lightning-fast dev server & bundler |
-| **Leaflet + React-Leaflet** | Interactive world map with route polylines |
+| **Three.js & React Three Fiber** | WebGL canvas for 3D container visualization |
+| **Leaflet + React-Leaflet** | Interactive world map with animated route tracking |
 | **Framer Motion** | Smooth micro-animations & transitions |
 | **Lucide React** | Premium icon library |
 | **Vanilla CSS** | Custom glassmorphic dark-mode design system |
@@ -74,10 +78,13 @@ Global supply chain logistics requires evaluating **dozens of variables** — tr
 │  ShipmentInput.jsx  │  Query input + world events   │
 │  AgentReasoning.jsx │  Live reasoning stream        │
 │  DecisionSummary.jsx│  Recommended route + metrics  │
-│  RouteMap.jsx       │  Interactive Leaflet map       │
-│  RouteComparison.jsx│  Side-by-side route cards     │
-│  CostBreakdown.jsx  │  Itemized pricing table       │
-│  RouteCard.jsx      │  Individual route score card  │
+│  RouteMap.jsx         │  Interactive Leaflet map       │
+│  TimelineScrubber.jsx │  Animation control for map     │
+│  RouteComparison.jsx  │  Side-by-side route cards      │
+│  CostBreakdown.jsx    │  Itemized pricing table        │
+│  Container3D.jsx      │  WebGL 3D Cargo Load visualization│
+│  SmartContractEscrow.jsx│  Web3 transaction UI           │
+│  RouteCard.jsx        │  Individual route score card   │
 └────────────────┬────────────────────────────────────┘
                  │ HTTP / SSE (Server-Sent Events)
                  ▼
@@ -105,6 +112,7 @@ Global supply chain logistics requires evaluating **dozens of variables** — tr
 │  port_congestion.py │  Port delay forecasting       │
 │  sustainability.py  │  Carbon emission calculation  │
 │  evaluator.py       │  Composite scoring engine     │
+│  negotiation.py     │  AI broker rate negotiations  │
 │  decision.py        │  Final recommendation logic   │
 ├─────────────────────────────────────────────────────┤
 │              TOOLS (Model / Data Layer)             │
@@ -140,9 +148,9 @@ User Query
                                         └────────────────────┼───────────────────────────┘
                                                              │
                                                              ▼
-                                                     ┌──────────────┐    ┌───────────┐
-                                                     │  Evaluator   │───▶│ Decision  │───▶ Result
-                                                     └──────────────┘    └───────────┘
+                                                     ┌──────────────┐    ┌─────────────┐    ┌───────────┐
+                                                     │  Evaluator   │───▶│ Negotiator  │───▶│ Decision  │───▶ Result
+                                                     └──────────────┘    └─────────────┘    └───────────┘
 ```
 
 > **Pricing, Weather, Congestion, and Sustainability** run in **parallel** for maximum performance.

@@ -16,7 +16,7 @@ async def pricing_node(state: ShipmentState, llm=None) -> Dict[str, Any]:
     routes = state.get("route_candidates", [])
     constraints = state.get("parsed_constraints", {})
     budget = constraints.get("budget_usd")
-    weight_kg = constraints.get("weight_kg", 100)
+    weight_kg = constraints.get("weight_kg") or 500.0
 
     if not routes:
         return {

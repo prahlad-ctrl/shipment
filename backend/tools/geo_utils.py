@@ -7,9 +7,11 @@ coordinate lookups for major logistics hubs worldwide.
 import math
 import json
 import os
+import os
 import urllib.request
 import urllib.parse
 from typing import Tuple, List, Dict, Optional
+import searoute as sr
 
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 
@@ -142,6 +144,8 @@ def generate_waypoints(
     lat2, lon2 = math.radians(destination[0]), math.radians(destination[1])
 
     d = haversine_distance(origin[0], origin[1], destination[0], destination[1])
+    if d == 0:
+        return [origin, destination]
     d_rad = d / 6371  # angular distance in radians
 
     waypoints = []
@@ -161,15 +165,48 @@ def generate_waypoints(
     return waypoints
 
 
-def get_route_waypoints(origin: str, destination: str) -> List[Tuple[float, float]]:
-    """Generate map waypoints between two named locations."""
+def generate_mode_waypoints(
+    origin: Tuple[float, float],
+    destination: Tuple[float, float],
+    mode: str
+) -> List[Tuple[float, float]]:
+    """
+    Generate high-fidelity waypoints based on transport mode.
+    Falls back to great-circle generation if third-party APIs fail.
+    """
+    try:
+        if mode == "sea":
+            # searoute expects [longitude, latitude]
+            route = sr.searoute([origin[1], origin[0]], [destination[1], destination[0]], append_orig_dest=True)
+            if route and "geometry" in route and "coordinates" in route["geometry"]:
+                # return [lat, lng]
+                return [(float(c[1]), float(c[0])) for c in route["geometry"]["coordinates"]]
+                
+        elif mode == "road":
+            # OSRM expects lon,lat
+            url = f"http://router.project-osrm.org/route/v1/driving/{origin[1]},{origin[0]};{destination[1]},{destination[0]}?overview=full&geometries=geojson"
+            req = urllib.request.Request(url, headers={'User-Agent': 'ShipmentAgent/1.0'})
+            with urllib.request.urlopen(req, timeout=5) as response:
+                data = json.loads(response.read().decode())
+                if data.get("code") == "Ok" and data.get("routes"):
+                    coords = data["routes"][0]["geometry"]["coordinates"]
+                    return [(float(c[1]), float(c[0])) for c in coords]
+    except Exception as e:
+        print(f"High-fidelity routing failed for mode {mode}, falling back to great-circle. Error: {e}")
+
+    # Fallback to great-circle for air or if API calls fail
+    return generate_waypoints(origin, destination)
+
+
+def get_route_waypoints(origin: str, destination: str, mode: str = "air") -> List[Tuple[float, float]]:
+    """Generate map waypoints between two named locations considering the transport mode."""
     origin_coords = get_coordinates(origin)
     dest_coords = get_coordinates(destination)
 
     if origin_coords is None or dest_coords is None:
         return []
 
-    return generate_waypoints(origin_coords, dest_coords)
+    return generate_mode_waypoints(origin_coords, dest_coords, mode)
 
 
 def find_matching_location(query: str) -> Optional[str]:

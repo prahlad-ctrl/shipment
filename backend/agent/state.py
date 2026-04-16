@@ -21,6 +21,10 @@ class ShipmentState(TypedDict):
     # World event / risk scenario (normal, suez_canal_blocked, port_strike, atlantic_storm)
     world_event: Optional[str]
     
+    # Conversational state
+    chat_history: Optional[List[Dict[str, str]]]
+    target_language: Optional[str]
+    
     # Parser output
     parsed_constraints: Optional[Dict[str, Any]]
     
@@ -41,6 +45,9 @@ class ShipmentState(TypedDict):
     
     # Evaluator output
     scored_routes: Optional[List[Dict[str, Any]]]
+    
+    # Negotiation output
+    negotiation_log: Optional[List[Dict[str, str]]]
     
     # Decision output
     recommendation: Optional[Dict[str, Any]]

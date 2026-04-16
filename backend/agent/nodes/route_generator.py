@@ -154,7 +154,7 @@ def _add_waypoints(route: Dict) -> Dict:
     """Add map visualization waypoints to a route."""
     all_waypoints = []
     for leg in route["legs"]:
-        wp = get_route_waypoints(leg["from_location"], leg["to_location"])
+        wp = get_route_waypoints(leg["from_location"], leg["to_location"], leg.get("mode", "air"))
         if wp:
             all_waypoints.extend([[lat, lng] for lat, lng in wp])
     route["waypoints"] = all_waypoints

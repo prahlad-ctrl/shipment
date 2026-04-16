@@ -104,12 +104,12 @@ export async function planShipment(query, worldEvent = 'normal') {
  * Stream the shipment planning agent via SSE.
  * Calls onStep for each reasoning step and onResult for the final result.
  */
-export async function streamShipmentPlan(query, worldEvent = 'normal', { onStep, onResult, onError, onDone }) {
+export async function streamShipmentPlan(query, worldEvent = 'normal', chatHistory = null, parsedConstraints = null, { onStep, onResult, onError, onDone }) {
   try {
     const res = await fetch(`${API_BASE}/shipment/plan/stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, world_event: worldEvent }),
+      body: JSON.stringify({ query, world_event: worldEvent, chat_history: chatHistory, parsed_constraints: parsedConstraints }),
     });
 
     if (!res.ok) {

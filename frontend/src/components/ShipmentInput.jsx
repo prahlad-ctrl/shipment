@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Send, Sparkles, Globe, AlertTriangle, CloudLightning, Anchor } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Send, Sparkles, Globe, AlertTriangle, Mic, Square, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { fetchPresets } from '../utils/api';
 
 const FALLBACK_PRESETS = [
-  { label: 'Dubai → Rotterdam', query: 'Ship 500kg from Dubai to Rotterdam within 5 days under $4000' },
-  { label: 'Shanghai → LA (Express)', query: 'Urgent shipment of 200kg from Shanghai to Los Angeles, need it in 3 days, budget up to $8000' },
+  { label: 'Dubai → Rotterdam', query: 'Ship 120 cartons of textiles (0.5x0.4x0.4 meters each) and 5 pallets of parts (1.2x1x1 meters each) from Dubai to Rotterdam under $4000' },
+  { label: 'Shanghai → LA (Express)', query: 'Urgent shipment from Shanghai to Los Angeles: 50 crates of electronics (0.8x0.6x0.6 meters each), need it in 3 days, budget up to $8000' },
   { label: 'Mumbai → London (Budget)', query: 'Ship 1000kg of textiles from Mumbai to London, cheapest option, can wait up to 20 days' },
-  { label: 'Hong Kong → New York', query: 'Rush delivery: 300kg from Hong Kong to New York in 2 days, cost is not a concern' },
+  { label: 'Hong Kong → New York', query: 'Rush delivery: 10 containers of medical supplies (0.4x0.4x0.4 meters each) from Hong Kong to New York in 2 days, cost is not a concern' },
 ];
 
 const WORLD_EVENTS = [
@@ -19,6 +19,12 @@ const WORLD_EVENTS = [
 export default function ShipmentInput({ onSubmit, isLoading, worldEvent, onWorldEventChange }) {
   const [query, setQuery] = useState('');
   const [presets, setPresets] = useState(FALLBACK_PRESETS);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchPresets()
@@ -37,6 +43,91 @@ export default function ShipmentInput({ onSubmit, isLoading, worldEvent, onWorld
     setQuery(presetQuery);
   };
 
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    setIsUploading(true);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await fetch('http://localhost:8000/api/vision/parse', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.success && data.query) {
+        setQuery(data.query);
+      } else {
+        alert(data.detail || 'Failed to parse image');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error uploading document: ' + e.message);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      handleFileUpload(file);
+    }
+  };
+
+  const toggleRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const mediaRecorder = new MediaRecorder(stream);
+        mediaRecorderRef.current = mediaRecorder;
+        chunksRef.current = [];
+        
+        mediaRecorder.ondataavailable = (e) => chunksRef.current.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const mimeType = mediaRecorder.mimeType || 'audio/webm';
+          const extension = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+          const blob = new Blob(chunksRef.current, { type: mimeType });
+          stream.getTracks().forEach(track => track.stop());
+          
+          setIsUploading(true);
+          const formData = new FormData();
+          formData.append('file', blob, `recording.${extension}`);
+          
+          try {
+            const response = await fetch('http://localhost:8000/api/voice/transcribe', {
+              method: 'POST',
+              body: formData,
+            });
+            const data = await response.json();
+            if (response.ok && data.success && data.query) {
+              setQuery(prev => prev + (prev ? ' ' : '') + data.query);
+            } else {
+               alert(data.detail || 'Voice API failed');
+            }
+          } catch (e) {
+            console.error(e);
+            alert('Error sending voice: ' + e.message);
+          } finally {
+            setIsUploading(false);
+          }
+        };
+        
+        mediaRecorder.start();
+        setIsRecording(true);
+      } catch (err) {
+        console.error("Could not start recording", err);
+        alert('Microphone access denied.');
+      }
+    }
+  };
+
   const activeEvent = WORLD_EVENTS.find(e => e.id === worldEvent) || WORLD_EVENTS[0];
 
   return (
@@ -51,16 +142,51 @@ export default function ShipmentInput({ onSubmit, isLoading, worldEvent, onWorld
             Tell us what you need to ship — include origin, destination, weight, deadline, and budget for best results.
           </div>
 
-          <div className="input-wrapper">
+          <div 
+            className="input-wrapper"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={handleDrop}
+          >
             <textarea
               id="shipment-query-input"
               className="input-textarea"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder='e.g., "Ship 500kg from Dubai to Rotterdam within 5 days under $4000"'
+              placeholder='e.g., "Ship 500kg from Dubai to Rotterdam within 5 days under $4000" or upload a document.'
               rows={3}
-              disabled={isLoading}
+              disabled={isLoading || isUploading}
             />
+            {isUploading && (
+              <div className="ingestion-overlay">
+                <Loader2 size={24} className="spinner-icon" />
+                <span>Processing with AI...</span>
+              </div>
+            )}
+            <div className="ingestion-tools">
+              <button 
+                type="button" 
+                className={`tool-btn ${isRecording ? 'recording' : ''}`}
+                onClick={toggleRecording}
+                title="Voice Input"
+              >
+                {isRecording ? <Square size={16} /> : <Mic size={16} />}
+              </button>
+              <button 
+                type="button" 
+                className="tool-btn"
+                onClick={() => fileInputRef.current?.click()}
+                title="Upload Bill of Lading (Image)"
+              >
+                <ImageIcon size={16} />
+              </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden-file-input" 
+                accept="image/*"
+                onChange={(e) => handleFileUpload(e.target.files[0])}
+              />
+            </div>
           </div>
 
           {/* World Conditions Selector */}

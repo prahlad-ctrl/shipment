@@ -1,10 +1,62 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Map as MapIcon } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, CircleMarker } from 'react-leaflet';
+import TimelineScrubber from './TimelineScrubber';
 import 'leaflet/dist/leaflet.css';
 
+// Simple polyline interpolator
+function interpolatePosition(waypoints, progress) {
+    if (!waypoints || waypoints.length === 0) return null;
+    if (progress <= 0) return waypoints[0];
+    if (progress >= 1) return waypoints[waypoints.length - 1];
+    
+    // Total segments geometry mapped
+    const totalSegments = waypoints.length - 1;
+    let totalDist = 0;
+    const segmentDists = [];
+    
+    for (let i = 0; i < totalSegments; i++) {
+        const p1 = waypoints[i];
+        const p2 = waypoints[i+1];
+        // Flat euclidean approximation is fine for tiny steps
+        const dist = Math.sqrt(Math.pow(p2[0] - p1[0], 2) + Math.pow(p2[1] - p1[1], 2));
+        segmentDists.push(dist);
+        totalDist += dist;
+    }
+    
+    const targetDist = progress * totalDist;
+    let accumulated = 0;
+    for (let i = 0; i < totalSegments; i++) {
+        const d = segmentDists[i];
+        if (accumulated + d >= targetDist) {
+            const fraction = d === 0 ? 0 : (targetDist - accumulated) / d;
+            const p1 = waypoints[i];
+            const p2 = waypoints[i+1];
+            return [
+                p1[0] + (p2[0] - p1[0]) * fraction,
+                p1[1] + (p2[1] - p1[1]) * fraction
+            ];
+        }
+        accumulated += d;
+    }
+    return waypoints[waypoints.length - 1];
+}
+
 export default function RouteMap({ routes }) {
+  const [progress, setProgress] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setProgress(p => {
+        if (p >= 1) return 0;
+        return p + 0.002; // Scrub speed
+      });
+    }, 30);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
   const routeLines = useMemo(() => {
     if (!routes || routes.length === 0) return [];
 
@@ -147,6 +199,28 @@ export default function RouteMap({ routes }) {
               }}
             />
           ))}
+
+          {/* Animated Fleet Markers */}
+          {routeLines.map((r, i) => {
+             const currentPos = interpolatePosition(r.waypoints, progress);
+             if (!currentPos) return null;
+             const color = modeColor[r.mode] || '#3b82f6';
+             const radius = r.isRecommended ? 10 : 6;
+             
+             return (
+               <CircleMarker 
+                 key={`fleet-${i}`}
+                 center={currentPos}
+                 radius={radius}
+                 pathOptions={{
+                   fillColor: 'white',
+                   color: color,
+                   weight: 3,
+                   fillOpacity: 1
+                 }}
+               />
+             )
+          })}
         </MapContainer>
 
         {/* Legend */}
@@ -158,6 +232,13 @@ export default function RouteMap({ routes }) {
             </div>
           ))}
         </div>
+        
+        <TimelineScrubber 
+          progress={progress} 
+          setProgress={setProgress} 
+          isPlaying={isPlaying} 
+          setIsPlaying={setIsPlaying} 
+        />
       </div>
     </section>
   );

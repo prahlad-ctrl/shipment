@@ -26,6 +26,7 @@ from agent.nodes.weather import weather_node
 from agent.nodes.port_congestion import port_congestion_node
 from agent.nodes.sustainability import sustainability_node
 from agent.nodes.evaluator import evaluator_node
+from agent.nodes.negotiation import negotiation_node
 from agent.nodes.decision import decision_node
 
 load_dotenv()
@@ -33,11 +34,31 @@ load_dotenv()
 
 def _get_llm():
     """
-    Get LLM instance with OpenAI primary, Gemini secondary, Ollama fallback.
+    Get LLM instance with Gemini primary, OpenAI secondary, Ollama fallback.
     Returns None if none is available (algorithmic mode).
     """
-    # Try OpenAI first
+    # Try Google Gemini FIRST because OpenAI quota is dead
+    google_key = os.getenv("GOOGLE_API_KEY", "")
+    if google_key and google_key != "your_gemini_api_key_here":
+        try:
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            llm = ChatGoogleGenerativeAI(
+                model="gemini-1.5-flash", 
+                google_api_key=google_key,
+                temperature=0.1
+            )
+            print("[OK] Using Google Gemini LLM")
+            return llm
+        except Exception as e:
+            print(f"[WARN] Gemini init failed: {e}")
+
+    # Try OpenAI SECOND
     openai_key = os.getenv("OPENAI_API_KEY", "")
+    
+    # [TEMPORARY FIX]: User's current key is out of quota causing 25s hang delays.
+    if openai_key.startswith("sk-proj-lITxWK"):
+        openai_key = ""
+
     if openai_key and openai_key != "your_openai_api_key_here":
         try:
             from langchain_openai import ChatOpenAI
@@ -48,25 +69,9 @@ def _get_llm():
                 max_tokens=2048
             )
             print("[OK] Using OpenAI LLM")
-            return llm
         except Exception as e:
             print(f"[WARN] OpenAI init failed: {e}")
 
-    # Try Google Gemini
-    google_key = os.getenv("GOOGLE_API_KEY", "")
-    if google_key and google_key != "your_gemini_api_key_here":
-        try:
-            from langchain_google_genai import ChatGoogleGenerativeAI
-            llm = ChatGoogleGenerativeAI(
-                model="gemini-2.0-flash",
-                google_api_key=google_key,
-                temperature=0.1,
-                max_output_tokens=2048
-            )
-            print("[OK] Using Google Gemini LLM")
-            return llm
-        except Exception as e:
-            print(f"[WARN] Gemini init failed: {e}")
 
     # Fallback to Ollama
     ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -126,6 +131,9 @@ async def _sustainability(state: ShipmentState) -> Dict[str, Any]:
 
 async def _evaluator(state: ShipmentState) -> Dict[str, Any]:
     return await evaluator_node(state, llm=get_llm())
+
+async def _negotiation(state: ShipmentState) -> Dict[str, Any]:
+    return await negotiation_node(state, llm=get_llm())
 
 async def _decision(state: ShipmentState) -> Dict[str, Any]:
     return await decision_node(state, llm=get_llm())
@@ -201,6 +209,7 @@ def build_graph() -> StateGraph:
     graph.add_node("risk_scenario", _risk_scenario)
     graph.add_node("enrichment", _parallel_enrichment)
     graph.add_node("evaluator", _evaluator)
+    graph.add_node("negotiation", _negotiation)
     graph.add_node("decision", _decision)
     graph.add_node("abort", _abort_node)
 
@@ -221,7 +230,8 @@ def build_graph() -> StateGraph:
     graph.add_edge("route_generator", "risk_scenario")
     graph.add_edge("risk_scenario", "enrichment")
     graph.add_edge("enrichment", "evaluator")
-    graph.add_edge("evaluator", "decision")
+    graph.add_edge("evaluator", "negotiation")
+    graph.add_edge("negotiation", "decision")
     graph.add_edge("decision", END)
     graph.add_edge("abort", END)
 
@@ -230,16 +240,18 @@ def build_graph() -> StateGraph:
 
 # ── Execution helpers ────────────────────────────────────────────────────────
 
-async def run_agent(query: str, world_event: str = "normal") -> Dict[str, Any]:
+async def run_agent(query: str, world_event: str = "normal", chat_history=None, target_language=None, parsed_constraints=None) -> Dict[str, Any]:
     """
     Run the full agent pipeline synchronously and return the final state.
     """
     graph = build_graph()
 
     initial_state: ShipmentState = {
-        "raw_input": query,
+        "raw_input": query if query else "",
         "world_event": world_event,
-        "parsed_constraints": None,
+        "chat_history": chat_history,
+        "target_language": target_language,
+        "parsed_constraints": parsed_constraints,
         "resolved_hubs": None,
         "risk_scenario": None,
         "route_candidates": None,
@@ -248,6 +260,7 @@ async def run_agent(query: str, world_event: str = "normal") -> Dict[str, Any]:
         "congestion_data": None,
         "sustainability_data": None,
         "scored_routes": None,
+        "negotiation_log": None,
         "recommendation": None,
         "alternatives": None,
         "reasoning_summary": None,
@@ -260,7 +273,7 @@ async def run_agent(query: str, world_event: str = "normal") -> Dict[str, Any]:
     return result
 
 
-async def run_agent_streaming(query: str, world_event: str = "normal") -> AsyncGenerator[Dict[str, Any], None]:
+async def run_agent_streaming(query: str, world_event: str = "normal", chat_history=None, target_language=None, parsed_constraints=None) -> AsyncGenerator[Dict[str, Any], None]:
     """
     Run the agent pipeline with streaming — yields reasoning trace steps
     as they are produced by each node.
@@ -268,9 +281,11 @@ async def run_agent_streaming(query: str, world_event: str = "normal") -> AsyncG
     graph = build_graph()
 
     initial_state: ShipmentState = {
-        "raw_input": query,
+        "raw_input": query if query else "",
         "world_event": world_event,
-        "parsed_constraints": None,
+        "chat_history": chat_history,
+        "target_language": target_language,
+        "parsed_constraints": parsed_constraints,
         "resolved_hubs": None,
         "risk_scenario": None,
         "route_candidates": None,
@@ -279,6 +294,7 @@ async def run_agent_streaming(query: str, world_event: str = "normal") -> AsyncG
         "congestion_data": None,
         "sustainability_data": None,
         "scored_routes": None,
+        "negotiation_log": None,
         "recommendation": None,
         "alternatives": None,
         "reasoning_summary": None,
@@ -309,6 +325,7 @@ async def run_agent_streaming(query: str, world_event: str = "normal") -> AsyncG
             "reasoning_trace": event.get("reasoning_trace", []),
             "sustainability_data": event.get("sustainability_data", []),
             "risk_scenario": event.get("risk_scenario"),
+            "negotiation_log": event.get("negotiation_log"),
             "error": event.get("error")
         }
     }

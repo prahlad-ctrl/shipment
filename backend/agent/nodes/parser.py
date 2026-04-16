@@ -23,8 +23,24 @@ def _fallback_parse(query: str) -> Dict[str, Any]:
         "budget_usd": None,
         "priority": "balanced",
         "cargo_type": "general",
+        "cargo_items": [],
         "special_requirements": []
     }
+
+    # Extract cargo items explicitly (e.g. "120 cartons of textiles (0.5x0.4x0.4 meters each)")
+    cargo_item_pattern = re.finditer(r'(\d+)\s+([a-zA-Z]+)\s+of\s+([a-zA-Z\s]+)\s*\(([\d\.]+)\s*[xX]\s*([\d\.]+)\s*[xX]\s*([\d\.]+)', query, re.IGNORECASE)
+    for match in cargo_item_pattern:
+        qty = int(match.group(1))
+        container_type = match.group(3).strip()
+        l = float(match.group(4))
+        w = float(match.group(5))
+        h = float(match.group(6))
+        
+        result["cargo_items"].append({
+            "type": container_type,
+            "qty": qty,
+            "dim": [l, w, h]
+        })
 
     # Extract weight
     weight_match = re.search(r'(\d+(?:\.\d+)?)\s*(?:kg|kilos?|kilograms?)', query, re.IGNORECASE)
@@ -93,14 +109,24 @@ async def parser_node(state: ShipmentState, llm=None) -> Dict[str, Any]:
     if llm is not None:
         try:
             from agent.prompts import PARSER_PROMPT
-            prompt = PARSER_PROMPT.format(query=query)
+            
+            chat_history = state.get("chat_history", [])
+            current_constraints = state.get("parsed_constraints", {})
+            target_lang = state.get("target_language", "English")
+            
+            prompt = PARSER_PROMPT.format(
+                query=query,
+                chat_history=json.dumps(chat_history) if chat_history else "None",
+                current_constraints=json.dumps(current_constraints) if current_constraints else "None",
+                target_language=target_lang
+            )
             response = await llm.ainvoke(prompt)
             content = response.content if hasattr(response, 'content') else str(response)
 
-            # Extract JSON from response
-            json_match = re.search(r'\{[^{}]*\}', content, re.DOTALL)
+            # Extract JSON from response (support nested objects and arrays)
+            json_match = re.search(r'(\{.*\})', content, re.DOTALL)
             if json_match:
-                parsed = json.loads(json_match.group())
+                parsed = json.loads(json_match.group(1))
         except Exception as e:
             print(f"LLM parsing failed, using fallback: {e}")
 

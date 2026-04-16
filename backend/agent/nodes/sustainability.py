@@ -97,7 +97,7 @@ async def sustainability_node(state: ShipmentState, llm=None) -> Dict[str, Any]:
     """
     routes = state.get("route_candidates", [])
     constraints = state.get("parsed_constraints", {})
-    weight_kg = constraints.get("weight_kg", 100)
+    weight_kg = constraints.get("weight_kg") or 500.0
 
     if not routes:
         return {

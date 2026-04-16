@@ -7,9 +7,12 @@ import json
 import asyncio
 from typing import AsyncGenerator
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, File, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import os
+import base64
+from openai import AsyncOpenAI
 
 from api.schemas import ShipmentRequest, ErrorResponse
 from agent.graph import run_agent, run_agent_streaming
@@ -34,12 +37,12 @@ async def get_presets():
         "presets": [
             {
                 "label": "Dubai → Rotterdam (Budget)",
-                "query": "Ship 500kg from Dubai to Rotterdam within 5 days under $4000",
+                "query": "Ship 120 cartons of textiles (0.5x0.4x0.4 meters each) and 5 pallets of parts (1.2x1x1 meters each) from Dubai to Rotterdam under $4000",
                 "tags": ["sea", "air", "multimodal"]
             },
             {
                 "label": "Shanghai → Los Angeles (Express)",
-                "query": "Urgent shipment of 200kg from Shanghai to Los Angeles, need it in 3 days, budget up to $8000",
+                "query": "Urgent shipment from Shanghai to Los Angeles: 50 crates of electronics (0.8x0.6x0.6 meters each), need it in 3 days, budget up to $8000",
                 "tags": ["air", "express"]
             },
             {
@@ -49,12 +52,12 @@ async def get_presets():
             },
             {
                 "label": "Singapore → Hamburg (Reliable)",
-                "query": "Ship 750kg of electronics from Singapore to Hamburg, need reliable delivery within 10 days, budget $5000",
+                "query": "Ship 20 large pallets of heavy machinery (1x1x1.5 meters each) from Singapore to Hamburg, reliable delivery within 10 days, budget $5000",
                 "tags": ["reliability", "multimodal"]
             },
             {
                 "label": "Hong Kong → New York (Fast)",
-                "query": "Rush delivery: 300kg from Hong Kong to New York in 2 days, cost is not a concern",
+                "query": "Rush delivery: 10 containers of medical supplies (0.4x0.4x0.4 meters each) from Hong Kong to New York in 2 days, cost is not a concern",
                 "tags": ["air", "express", "urgent"]
             }
         ]
@@ -84,7 +87,12 @@ async def create_shipment_plan(request: ShipmentRequest):
     Run the full agent pipeline and return the complete shipment plan.
     """
     try:
-        result = await run_agent(request.query, world_event=request.world_event.value)
+        result = await run_agent(
+            request.query, 
+            world_event=request.world_event.value, 
+            chat_history=request.chat_history,
+            parsed_constraints=request.parsed_constraints
+        )
 
         if result.get("error"):
             raise HTTPException(status_code=400, detail=result["error"])
@@ -98,7 +106,8 @@ async def create_shipment_plan(request: ShipmentRequest):
             "parsed_constraints": result.get("parsed_constraints"),
             "reasoning_trace": result.get("reasoning_trace", []),
             "sustainability_data": result.get("sustainability_data", []),
-            "risk_scenario": result.get("risk_scenario")
+            "risk_scenario": result.get("risk_scenario"),
+            "negotiation_log": result.get("negotiation_log")
         }
     except HTTPException:
         raise
@@ -108,10 +117,15 @@ async def create_shipment_plan(request: ShipmentRequest):
 
 # ── SSE Streaming Endpoint ──────────────────────────────────────────────────
 
-async def _event_generator(query: str, world_event: str = "normal") -> AsyncGenerator[str, None]:
+async def _event_generator(query: str, world_event: str = "normal", chat_history=None, parsed_constraints=None) -> AsyncGenerator[str, None]:
     """Generate SSE events from the agent pipeline."""
     try:
-        async for event in run_agent_streaming(query, world_event=world_event):
+        async for event in run_agent_streaming(
+            query, 
+            world_event=world_event, 
+            chat_history=chat_history,
+            parsed_constraints=parsed_constraints
+        ):
             data = json.dumps(event, default=str)
             yield f"data: {data}\n\n"
 
@@ -130,7 +144,12 @@ async def stream_shipment_plan(request: ShipmentRequest):
     into the agent's decision-making process.
     """
     return StreamingResponse(
-        _event_generator(request.query, world_event=request.world_event.value),
+        _event_generator(
+            request.query, 
+            world_event=request.world_event.value, 
+            chat_history=request.chat_history,
+            parsed_constraints=request.parsed_constraints
+        ),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
@@ -138,3 +157,81 @@ async def stream_shipment_plan(request: ShipmentRequest):
             "X-Accel-Buffering": "no"
         }
     )
+
+# ── Voice & Vision Ingestion ────────────────────────────────────────────────
+
+@router.post("/vision/parse")
+async def vision_parse(file: UploadFile = File(...)):
+    """Parse a shipping document image and extract details."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="OpenAI API key not configured")
+        
+    client = AsyncOpenAI(api_key=api_key)
+    
+    content = await file.read()
+    base64_image = base64.b64encode(content).decode('utf-8')
+    mime_type = file.content_type
+    
+    prompt = "You are a logistics expert. Extract the following details from this shipping document: origin, destination, weight in kg, dimensions if any, and type of goods. Format your response into a single concise natural language sentence like: 'Ship 500kg of electronics from Dubai to Rotterdam.' Do not output anything else."
+    
+    try:
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{base64_image}"
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens=300
+        )
+        query_text = response.choices[0].message.content.strip()
+        return {"success": True, "query": query_text}
+    except Exception as e:
+        error_msg = str(e)
+        if "insufficient_quota" in error_msg:
+            raise HTTPException(status_code=429, detail="OpenAI API Quota Exceeded. Vision API unavailable.")
+        raise HTTPException(status_code=500, detail=f"Vision API error: {error_msg}")
+
+
+@router.post("/voice/transcribe")
+async def voice_transcribe(file: UploadFile = File(...)):
+    """Transcribe a voice memo into text."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="OpenAI API key not configured")
+        
+    client = AsyncOpenAI(api_key=api_key)
+    
+    temp_file_path = f"temp_{file.filename}"
+    try:
+        content = await file.read()
+        with open(temp_file_path, "wb") as f:
+            f.write(content)
+            
+        with open(temp_file_path, "rb") as audio_file:
+            transcript = await client.audio.translations.create(
+                model="whisper-1", 
+                file=audio_file
+            )
+        
+        os.remove(temp_file_path)
+        return {"success": True, "query": transcript.text}
+    except Exception as e:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+            
+        error_msg = str(e)
+        if "insufficient_quota" in error_msg:
+            raise HTTPException(status_code=429, detail="OpenAI API Quota Exceeded. Voice transcribe unavailable.")
+        raise HTTPException(status_code=500, detail=f"Voice API error: {error_msg}")
+

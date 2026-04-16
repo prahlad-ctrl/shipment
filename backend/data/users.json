@@ -64,5 +64,14 @@
     "created_at": "2026-04-16T10:57:08.231094+00:00",
     "pending_otp": "739623",
     "otp_expires": 1776337335.6302843
+  },
+  "aiuse13579@gmail.com": {
+    "name": "AI use",
+    "password_hash": "",
+    "salt": "",
+    "role": "user",
+    "mfa_enabled": false,
+    "auth_provider": "google",
+    "created_at": "2026-04-16T16:44:09.123837+00:00"
   }
 }

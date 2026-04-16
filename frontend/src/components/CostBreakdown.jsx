@@ -53,7 +53,14 @@ export default function CostBreakdown({ pricing }) {
 
         <div className="cost-total">
           <span className="cost-total-label">Total Cost</span>
-          <span className="cost-total-value">{formatCurrency(total)}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {breakdown.original_total && (
+              <span style={{ textDecoration: 'line-through', color: 'var(--text-tertiary)', fontSize: '0.85em' }}>
+                {formatCurrency(breakdown.original_total)}
+              </span>
+            )}
+            <span className="cost-total-value">{formatCurrency(total)}</span>
+          </div>
         </div>
 
         {pricing.within_budget !== null && pricing.within_budget !== undefined && (

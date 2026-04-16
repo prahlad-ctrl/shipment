@@ -3,6 +3,7 @@ import './index.css';
 import Header from './components/Header';
 import ShipmentInput from './components/ShipmentInput';
 import AgentReasoningStream from './components/AgentReasoningStream';
+import CopilotChat from './components/CopilotChat';
 import DecisionSummary from './components/DecisionSummary';
 import RouteMap from './components/RouteMap';
 import RouteComparison from './components/RouteComparison';
@@ -44,13 +45,17 @@ export default function App() {
     setReasoningSteps([]);
   };
 
-  const handleSubmit = async (query) => {
+  const handleSubmit = async (query, history = null) => {
     setIsLoading(true);
     setReasoningSteps([]);
+    
+    // Hold onto the existing constraints if this is a follow-up
+    const existingConstraints = history ? (result?.parsed_constraints || null) : null;
+    
     setResult(null);
     setError(null);
 
-    await streamShipmentPlan(query, worldEvent, {
+    await streamShipmentPlan(query, worldEvent, history, existingConstraints, {
       onStep: (step) => {
         setReasoningSteps((prev) => [...prev, step]);
       },
@@ -110,7 +115,11 @@ export default function App() {
               reasoningSummary={result.reasoning_summary}
               tradeOffAnalysis={result.trade_off_analysis}
               sustainabilityData={result.sustainability_data}
+              negotiationLog={result.negotiation_log}
+              parsedConstraints={result.parsed_constraints}
             />
+
+            <CopilotChat onSubmit={handleSubmit} isLoading={isLoading} />
 
             <RouteMap routes={allRoutes} />
 

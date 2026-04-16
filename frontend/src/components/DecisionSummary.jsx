@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { Trophy, DollarSign, Clock, ShieldCheck, BarChart3, Leaf } from 'lucide-react';
 import { formatCurrency, formatDays, capitalize } from '../utils/formatters';
+import Container3D from './Container3D';
+import SmartContractEscrow from './SmartContractEscrow';
 
-export default function DecisionSummary({ recommendation, reasoningSummary, tradeOffAnalysis, sustainabilityData }) {
+export default function DecisionSummary({ recommendation, reasoningSummary, tradeOffAnalysis, sustainabilityData, negotiationLog, parsedConstraints }) {
   if (!recommendation) return null;
 
   const route = recommendation.route;
@@ -108,6 +110,43 @@ export default function DecisionSummary({ recommendation, reasoningSummary, trad
             <div className="decision-reasoning-text">{tradeOffAnalysis}</div>
           </div>
         )}
+
+        {/* Negotiation Log */}
+        {negotiationLog && negotiationLog.length > 0 && (
+          <div className="decision-reasoning" style={{ marginTop: 'var(--space-lg)' }}>
+            <div className="decision-reasoning-label">🤝 Automated Agent Negotiation Match</div>
+            <div style={{ fontSize: '0.8em', color: 'var(--text-tertiary)', marginBottom: '8px', lineHeight: '1.4' }}>
+              Our AI Broker automatically contacts the proposed carrier to request real-time spot discounts based on active market capacity before finalizing your route.
+            </div>
+            <div className="negotiation-chat" style={{ background: 'rgba(0,0,0,0.2)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {negotiationLog.map((log, i) => (
+                <div key={i} style={{
+                  alignSelf: log.sender === 'You' ? 'flex-end' : 'flex-start',
+                  background: log.sender === 'You' ? 'rgba(59, 130, 246, 0.15)' : 'var(--glass-bg)',
+                  border: `1px solid ${log.sender === 'You' ? 'rgba(59, 130, 246, 0.3)' : 'var(--glass-border)'}`,
+                  padding: '8px 12px',
+                  borderRadius: '12px',
+                  maxWidth: '85%',
+                  fontSize: '0.85em'
+                }}>
+                  <strong style={{ color: log.sender === 'You' ? 'var(--accent-blue)' : 'var(--text-primary)' }}>
+                    {log.sender === 'You' ? 'AI Broker' : log.sender}:
+                  </strong> {log.message}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* --- ALL IN EXTRA FEATURES --- */}
+        <Container3D constraints={parsedConstraints} />
+
+        <SmartContractEscrow 
+          cost={cost} 
+          routeId={route?.id || 'sim_route'}
+          weatherData={recommendation.weather}
+        />
+        
       </motion.div>
     </section>
   );

@@ -51,19 +51,27 @@ class ShipmentRequest(BaseModel):
     """Incoming shipment planning request."""
     query: str = Field(..., description="Natural language shipment request", min_length=5)
     world_event: WorldEvent = Field(default=WorldEvent.NORMAL, description="Active world event for risk simulation")
-
+    chat_history: Optional[List[Dict[str, str]]] = Field(default=None, description="Previous conversation context")
+    parsed_constraints: Optional[Dict[str, Any]] = Field(default=None, description="Existing parsed constraints")
 
 # ── Parsed Constraints ───────────────────────────────────────────────────────
+
+class CargoItem(BaseModel):
+    """Specific dimensional cargo item."""
+    type: str = Field(..., description="Description of the cargo")
+    qty: int = Field(..., description="Quantity of this item type", gt=0)
+    dim: Optional[List[float]] = Field(None, description="Dimensions [length, width, height] in meters if mentioned")
 
 class ParsedConstraints(BaseModel):
     """Structured constraints extracted from natural language input."""
     origin: str = Field(..., description="Origin city/port")
     destination: str = Field(..., description="Destination city/port")
-    weight_kg: float = Field(..., description="Shipment weight in kilograms", gt=0)
+    weight_kg: Optional[float] = Field(None, description="Shipment weight in kilograms")
     deadline_days: Optional[int] = Field(None, description="Maximum delivery time in days")
     budget_usd: Optional[float] = Field(None, description="Maximum budget in USD")
     priority: Priority = Field(default=Priority.BALANCED, description="Optimization priority")
     cargo_type: Optional[str] = Field(None, description="Type of cargo (general, perishable, hazardous, fragile)")
+    cargo_items: Optional[List[CargoItem]] = Field(default_factory=list, description="Specific cargo items with dimensions if provided")
     special_requirements: Optional[List[str]] = Field(default_factory=list, description="Any special requirements")
 
 
@@ -200,6 +208,7 @@ class ShipmentPlan(BaseModel):
     trade_off_analysis: str = Field(..., description="Cost vs speed vs risk analysis")
     reasoning_trace: List[ReasoningStep] = Field(default_factory=list, description="Full agent reasoning trace")
     parsed_constraints: ParsedConstraints = Field(..., description="Parsed input constraints")
+    negotiation_log: Optional[List[Dict[str, str]]] = Field(default=None, description="Simulated carrier negotiation chat")
 
 
 class ErrorResponse(BaseModel):
